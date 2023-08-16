@@ -36,7 +36,7 @@ func main() {
 		Configs: []InterfaceConfiguration{
 			{
 				Active:        "act",
-				Description:   "Fthis",
+				Description:   "This Interface",
 				InterfaceName: "GigabitEthernet0/0/0/0",
 				Shutdown: Shutdown{
 					Op: "delete",
@@ -44,7 +44,7 @@ func main() {
 			},
 			{
 				Active:        "act",
-				Description:   "Fthat",
+				Description:   "That Interface",
 				InterfaceName: "GigabitEthernet0/0/0/1",
 				Shutdown: Shutdown{
 					Op: "delete",

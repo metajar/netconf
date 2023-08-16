@@ -30,13 +30,13 @@ func main() {
 	interfaces := []InterfaceConfiguration{
 		{
 			Active:        "act",
-			Description:   "Fthis",
+			Description:   "This",
 			InterfaceName: "GigabitEthernet0/0/0/0",
 			ShutdownOp:    "delete",
 		},
 		{
 			Active:        "act2",
-			Description:   "Fthat",
+			Description:   "That",
 			InterfaceName: "GigabitEthernet0/0/0/1",
 			ShutdownOp:    "none",
 		},

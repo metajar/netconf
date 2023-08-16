@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/metajar/netconf/netconf"
 	"log"
-	"metaconf/netconf"
 )
 
 func main() {
