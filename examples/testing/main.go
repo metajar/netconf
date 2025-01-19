@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/metajar/netconf/netconf"
 	"github.com/metajar/netconf/netconf/message"
 	"golang.org/x/crypto/ssh"
-	"log"
-	"time"
 )
 
 /*
@@ -133,10 +134,12 @@ func createSession(port int) *netconf.Session {
 		Auth:            []ssh.AuthMethod{ssh.Password("admin")},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
-	s, err := netconf.DialSSH(fmt.Sprintf("127.0.0.1:%d", port), sshConfig)
+	t, err := netconf.DialSSH(fmt.Sprintf("127.0.0.1:%d", port), sshConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	s := netconf.NewSession(t) // Create session from transport
 	capabilities := netconf.DefaultCapabilities
 	err = s.SendHello(&message.Hello{Capabilities: capabilities})
 	if err != nil {

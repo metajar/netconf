@@ -51,7 +51,7 @@ func TestInvalidXML(t *testing.T) {
 	invalidXML := "<<top xmlns=\"http://example.com/schema/1.2/config\"><users/></top>"
 	didPanic := panics(
 		func() {
-			validateXML(invalidXML, Filter{})
+			ValidateXML(invalidXML, Filter{})
 		},
 	)
 
@@ -65,7 +65,7 @@ func TestValidXML(t *testing.T) {
 	invalidXML := "<top xmlns=\"http://example.com/schema/1.2/config\"><users/></top>"
 	didPanic := panics(
 		func() {
-			validateXML(invalidXML, Filter{})
+			ValidateXML(invalidXML, Filter{})
 		},
 	)
 
