@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/metajar/netconf/netconf"
 	"log"
+
+	"github.com/metajar/netconf/netconf"
 )
 
 func main() {
 	// We setup a new netconf client with a CISCOTYPE to connect to the cisco device.
-	c, err := netconf.NewClient("192.168.88.8:830", "grpc", "53cret", netconf.CISCOTYPE)
+	c, err := netconf.NewClient("172.20.20.2:830", "grpc", "53cret", netconf.CISCOTYPE)
 	if err != nil {
 		log.Fatal(err)
 	}

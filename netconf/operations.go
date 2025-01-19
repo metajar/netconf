@@ -20,8 +20,9 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/metajar/netconf/netconf/message"
 	"time"
+
+	"github.com/metajar/netconf/netconf/message"
 )
 
 // CreateNotificationStream is a convenient method to create a notification stream registration.
@@ -39,8 +40,12 @@ func (session *Session) CreateNotificationStream(
 	session.Listener.Register(message.NetconfNotificationStreamHandler, callback)
 	sub := message.NewCreateSubscription(stopTime, startTime, stream)
 	rpc, err := session.SyncRPC(sub, timeout)
-	if err != nil || len(rpc.Errors) != 0 {
-		return fmt.Errorf("fail to create notification stream with errors: %s. Error: %s", rpc.Errors, err)
+	if err != nil {
+		errMsg := "fail to create notification stream"
+		if rpc != nil && len(rpc.Errors) != 0 {
+			errMsg += fmt.Sprintf(" with errors: %s", rpc.Errors)
+		}
+		return fmt.Errorf("%s: %w", errMsg, err)
 	}
 	session.IsNotificationStreamCreated = true
 	return nil
@@ -57,6 +62,8 @@ func (session *Session) AsyncRPC(operation message.RPCMethod, callback Callback)
 
 	// register the listener for the message
 	session.Listener.Register(operation.GetMessageID(), callback)
+
+	session.logger.Info("Sending RPC")
 	err = session.Transport.Send(request)
 	if err != nil {
 		return err
@@ -78,10 +85,12 @@ func (session *Session) SyncRPC(operation message.RPCMethod, timeout int32) (*me
 	reply := make(chan message.RPCReply, 1)
 	callback := func(event Event) {
 		reply <- *event.RPCReply()
+		session.logger.Info("Successfully executed RPC")
 	}
 	session.Listener.Register(operation.GetMessageID(), callback)
 
 	// send rpc
+	session.logger.Info("Sending RPC")
 	err = session.Transport.Send(request)
 	if err != nil {
 		return nil, err

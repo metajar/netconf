@@ -10,7 +10,7 @@ import (
 )
 
 /*
-Adapted from https://github.com/openshift-telco/go-netconf-client/blob/main/examples/test-rpc.go
+Adapted from https://github.com/metajar/netconf/blob/main/examples/test-rpc.go
 */
 
 func main() {

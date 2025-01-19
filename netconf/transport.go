@@ -14,7 +14,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"regexp"
 	"strconv"
 )
@@ -62,10 +61,6 @@ func (t *transportBasicIO) Send(data []byte) error {
 	dataInfo = append(dataInfo, data...)
 	dataInfo = append(dataInfo, separator...)
 	_, err := t.Write(dataInfo)
-
-	if os.Getenv("DEBUG") != "" {
-		println(string(dataInfo))
-	}
 
 	return err
 }

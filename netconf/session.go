@@ -9,19 +9,35 @@
 package netconf
 
 import (
+	"context"
 	"encoding/xml"
-	"fmt"
-	"github.com/metajar/netconf/netconf/message"
+	"io"
+	"log/slog"
+	"regexp"
 	"strings"
+
+	"github.com/metajar/netconf/netconf/message"
 )
 
-// DefaultCapabilities sets the default capabilities of the client library
+// DefaultCapabilities sets the default capabilities of the client library.
 var DefaultCapabilities = []string{
 	message.NetconfVersion10,
 	message.NetconfVersion11,
 }
 
-// Session represents a NETCONF sessions with a remote NETCONF server
+type Logger interface {
+	Info(string, ...any)
+	Warn(string, ...any)
+	Error(string, ...any)
+	InfoContext(context.Context, string, ...any)
+	WarnContext(context.Context, string, ...any)
+	ErrorContext(context.Context, string, ...any)
+}
+
+// SessionOption allow optional configuration for the session.
+type SessionOption func(*Session)
+
+// Session represents a NETCONF sessions with a remote NETCONF server.
 type Session struct {
 	Transport                   Transport
 	SessionID                   int
@@ -29,11 +45,20 @@ type Session struct {
 	IsClosed                    bool
 	Listener                    *Dispatcher
 	IsNotificationStreamCreated bool
+	logger                      Logger
 }
 
 // NewSession creates a new NETCONF session using the provided transport layer.
-func NewSession(t Transport) *Session {
+func NewSession(t Transport, options ...SessionOption) *Session {
 	s := new(Session)
+	for _, opt := range options {
+		opt(s)
+	}
+
+	if s.logger == nil {
+		s.logger = slog.New(slog.NewJSONHandler(io.Discard, nil))
+	}
+
 	s.Transport = t
 
 	// Receive server Hello message
@@ -45,6 +70,13 @@ func NewSession(t Transport) *Session {
 	s.Listener.init()
 
 	return s
+}
+
+// WithSessionLogger set the session logger provided in the session option.
+func WithSessionLogger(logger Logger) SessionOption {
+	return func(s *Session) {
+		s.logger = logger
+	}
 }
 
 // SendHello send the initial message through NETCONF to advertise supported capability.
@@ -97,7 +129,7 @@ func (session *Session) Close() error {
 	return session.Transport.Close()
 }
 
-// Listen starts a goroutine that listen to incoming messages and dispatch them as then are processed.
+// Listen starts a goroutine that listen to incoming messages and dispatch them as they are processed.
 func (session *Session) listen() {
 	go func() {
 		for ok := true; ok; ok = !session.IsClosed {
@@ -107,19 +139,41 @@ func (session *Session) listen() {
 				continue
 			}
 			var rawReply = string(rawXML)
-			if strings.Contains(rawReply, "<rpc-reply") {
+			isRpcReply, err := regexp.MatchString(message.RpcReplyRegex, rawReply)
+			if err != nil {
+				session.logger.Error("failed to match RPCReply",
+					"rawReply", rawReply,
+					"err", err,
+				)
+				continue
+			}
 
+			if isRpcReply {
 				rpcReply, err := message.NewRPCReply(rawXML)
 				if err != nil {
-					println(fmt.Errorf("failed to marshall message into an RPCReply. %s", err))
+					session.logger.Error("failed to marshall message into an RPCReply",
+						"err", err,
+					)
 					continue
 				}
 				session.Listener.Dispatch(rpcReply.MessageID, 0, rpcReply)
+				continue
+			}
 
-			} else if strings.Contains(rawReply, "<notification") {
+			isNotification, err := regexp.MatchString(message.NotificationMessageRegex, rawReply)
+			if err != nil {
+				session.logger.Error("failed to match notification",
+					"rawReply", rawReply,
+					"err", err,
+				)
+				continue
+			}
+			if isNotification {
 				notification, err := message.NewNotification(rawXML)
 				if err != nil {
-					println(fmt.Printf("failed to marshall message into an Notification. %s\n", err))
+					session.logger.Error("failed to marshall message into an Notification",
+						"err", err,
+					)
 					continue
 				}
 				// In case we are using straight create-subscription, there is no way to discern who is the owner
@@ -129,10 +183,13 @@ func (session *Session) listen() {
 				} else {
 					session.Listener.Dispatch(notification.GetSubscriptionID(), 1, notification)
 				}
-			} else {
-				println(fmt.Errorf(fmt.Sprintf("unknown received message: \n%s", rawXML)))
+				continue
 			}
+
+			session.logger.Error("unknown received message",
+				"rawXML", rawXML,
+			)
 		}
-		println("exit receiving loop")
+		session.logger.Info("exit receiving loop")
 	}()
 }
