@@ -51,4 +51,19 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	platformFilter := `
+<components xmlns="http://openconfig.net/yang/platform">
+    <component>
+        <state>
+        </state>
+    </component>
+</components>
+`
+
+	response, err := c.Get(platformFilter)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(response)
 }

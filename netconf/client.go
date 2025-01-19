@@ -1,10 +1,11 @@
 package netconf
 
 import (
+	"time"
+
 	"github.com/gofrs/uuid"
 	"github.com/metajar/netconf/logging"
 	"github.com/metajar/netconf/netconf/message"
-	"time"
 )
 
 const (
@@ -45,6 +46,11 @@ func NewClient(target string, user, pass string, devicetype int) (Client, error)
 		target:    target,
 		timing:    time.Now(),
 	}, nil
+}
+
+func (c *Client) Get(filter string) (string, error) {
+	logging.Logger.Infow("Get", "filter", filter, "session", c.SessionID, "target", c.target, "duration", time.Since(c.timing).String())
+	return c.executeRPC(message.NewGet(message.FilterTypeSubtree, filter), 30)
 }
 
 func (c *Client) GetRunning() (string, error) {
