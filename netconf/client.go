@@ -11,6 +11,7 @@ import (
 const (
 	CISCOTYPE = iota
 	ARISTATYPE
+	JUNOS
 )
 
 type Client struct {
@@ -27,7 +28,7 @@ func NewClient(target string, user, pass string, devicetype int) (Client, error)
 	id, err := uuid.NewV4()
 
 	switch devicetype {
-	case 0:
+	case 0, 2:
 		sess, err = dialXR(target, user, pass)
 	case 1:
 		sess, err = dialArista(target, user, pass)
@@ -51,6 +52,14 @@ func NewClient(target string, user, pass string, devicetype int) (Client, error)
 func (c *Client) Get(filter string) (string, error) {
 	logging.Logger.Infow("Get", "filter", filter, "session", c.SessionID, "target", c.target, "duration", time.Since(c.timing).String())
 	return c.executeRPC(message.NewGet(message.FilterTypeSubtree, filter), 30)
+}
+
+func (c *Client) GetConfig(datastore string, filterType, filter string) (string, error) {
+	logging.Logger.Infow("Get", "filter", filter, "session", c.SessionID, "target", c.target, "duration", time.Since(c.timing).String())
+	if filterType == "" {
+		filterType = "subtree"
+	}
+	return c.executeRPC(message.NewGetConfig(datastore, filterType, filter), 30)
 }
 
 func (c *Client) GetRunning() (string, error) {

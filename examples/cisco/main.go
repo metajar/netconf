@@ -9,7 +9,7 @@ import (
 
 func main() {
 	// We setup a new netconf client with a CISCOTYPE to connect to the cisco device.
-	c, err := netconf.NewClient("172.20.20.2:830", "grpc", "53cret", netconf.CISCOTYPE)
+	c, err := netconf.NewClient("172.20.20.2:830", "clab", "clab@123", netconf.CISCOTYPE)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -21,14 +21,31 @@ func main() {
 	fmt.Println(running)
 
 	payload := `
-	<interface-configurations xmlns="http://cisco.com/ns/yang/Cisco-IOS-XR-ifmgr-cfg">
-        <interface-configuration>
-            <active>act</active>
-			<description>This is A description</description>
-            <interface-name>GigabitEthernet0/0/0/0</interface-name>
-		<shutdown xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="delete"/>
-        </interface-configuration>
-    </interface-configurations>
+  <interfaces xmlns="http://openconfig.net/yang/interfaces">
+    <interface>
+      <name>GigabitEthernet0/0/0/0</name>
+      <config>
+        <name>GigabitEthernet0/0/0/0</name>
+        <description>Hello There Friend</description>
+      </config>
+      <subinterfaces>
+        <subinterface>
+          <index>0</index>
+          <ipv4 xmlns="http://openconfig.net/yang/interfaces/ip">
+            <addresses>
+              <address>
+                <ip>88.88.88.1</ip>
+                <config>
+                  <ip>88.88.88.1</ip>
+                  <prefix-length>30</prefix-length>
+                </config>
+              </address>
+            </addresses>
+          </ipv4>
+        </subinterface>
+      </subinterfaces>
+    </interface>
+  </interfaces>
 `
 	_, err = c.Lock()
 	if err != nil {
@@ -51,19 +68,4 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	platformFilter := `
-<components xmlns="http://openconfig.net/yang/platform">
-    <component>
-        <state>
-        </state>
-    </component>
-</components>
-`
-
-	response, err := c.Get(platformFilter)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(response)
 }
