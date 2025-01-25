@@ -8,19 +8,69 @@ import (
 )
 
 func main() {
-	// We setup a new netconf client with a JUNOS to connect to the junos device.
-	c, err := netconf.NewClient("172.31.255.5:22", "admin", "Password", netconf.JUNOS)
+	// Initialize the netconf client to connect to the JUNOS device.
+	client, err := netconf.NewClient("172.31.255.5:22", "admin", "Password", netconf.JUNOS)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to create netconf client: %v", err)
 	}
-	defer c.Close()
-	filter := `<configuration>
-      <interfaces/>
-    </configuration>`
+	defer client.Close()
 
-	resp, err := c.GetConfig("candidate", "subtree", filter)
+	// Get interface information. Example using raw for sending raw RPC calls for Gets.
+	interfaceFilter := `<get-interface-information><detail/></get-interface-information>`
+	interfaceInfo, err := client.GetRaw(interfaceFilter)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalf("Failed to get interface information: %v", err)
 	}
-	fmt.Printf("%s\n", resp)
+	fmt.Println("Interface Information:")
+	fmt.Println(interfaceInfo)
+
+	// Define the configuration filter and the configuration to be set
+	configFilter := `<configuration><interfaces><interface><name>et-0/0/0</name></interface></interfaces></configuration>`
+	newConfig := `<configuration>
+		<interfaces>
+			<interface>
+				<name>et-0/0/0</name>
+				<description>This is the new description</description>
+			</interface>
+		</interfaces>
+	</configuration>`
+
+	// Retrieve the current configuration
+	currentConfig, err := client.GetConfig(netconf.RUNNING, "subtree", configFilter)
+	if err != nil {
+		log.Fatalf("Failed to get current configuration: %v", err)
+	}
+	fmt.Println("Current Configuration:")
+	fmt.Println(currentConfig)
+
+	// Lock the configuration
+	_, err = client.Lock()
+	if err != nil {
+		log.Fatalf("Failed to lock configuration: %v", err)
+	}
+	defer func() {
+		if _, err := client.UnLock(); err != nil {
+			log.Fatalf("Failed to unlock configuration: %v", err)
+		}
+	}()
+
+	// Edit the configuration
+	_, err = client.Edit(newConfig)
+	if err != nil {
+		log.Fatalf("Failed to edit configuration: %v", err)
+	}
+
+	// Commit the configuration
+	_, err = client.Commit()
+	if err != nil {
+		log.Fatalf("Failed to commit configuration: %v", err)
+	}
+
+	// Retrieve the updated configuration
+	updatedConfig, err := client.GetConfig(netconf.RUNNING, "subtree", configFilter)
+	if err != nil {
+		log.Fatalf("Failed to get updated configuration: %v", err)
+	}
+	fmt.Println("Updated Configuration:")
+	fmt.Println(updatedConfig)
 }

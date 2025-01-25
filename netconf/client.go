@@ -14,6 +14,11 @@ const (
 	JUNOS
 )
 
+const (
+	RUNNING   = "running"
+	CANDIDATE = "candidate"
+)
+
 type Client struct {
 	s         *Session
 	SessionID string
@@ -52,6 +57,11 @@ func NewClient(target string, user, pass string, devicetype int) (Client, error)
 func (c *Client) Get(filter string) (string, error) {
 	logging.Logger.Infow("Get", "filter", filter, "session", c.SessionID, "target", c.target, "duration", time.Since(c.timing).String())
 	return c.executeRPC(message.NewGet(message.FilterTypeSubtree, filter), 30)
+}
+
+func (c *Client) GetRaw(data string) (string, error) {
+	logging.Logger.Infow("GetRaw", "data", data)
+	return c.executeRPC(message.NewGetRaw(data), 30)
 }
 
 func (c *Client) GetConfig(datastore string, filterType, filter string) (string, error) {
