@@ -90,7 +90,7 @@ func TestGetWithoutFilter(t *testing.T) {
 }
 
 func TestGetWithFilter(t *testing.T) {
-	expected := "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"\"><filter type=\"subtree\"><top xmlns=\"http://example.com/schema/1.2/config\"><users/></top></filter></rpc>"
+	expected := "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"\"><get><filter type=\"subtree\"><top xmlns=\"http://example.com/schema/1.2/config\"><users/></top></filter></get></rpc>"
 
 	rpc := NewGet(FilterTypeSubtree, data)
 	output, err := xml.Marshal(rpc)
@@ -307,5 +307,33 @@ func TestNewRPC(t *testing.T) {
 
 	if got, want := StripUUID(string(output)), StripUUID(expected); got != want {
 		t.Errorf("TestNewRPC:\nGot:%s\nWant:\n%s", got, want)
+	}
+}
+
+func TestGetRawValidXML(t *testing.T) {
+	data := "<get-that-info><filter type=\"subtree\"><top xmlns=\"http://example.com/schema/1.2/config\"><users/></top></filter></get-that-info>"
+	expected := "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"\"><get-that-info><filter type=\"subtree\"><top xmlns=\"http://example.com/schema/1.2/config\"><users/></top></filter></get-that-info></rpc>"
+
+	rpc := NewRaw(data)
+	output, err := xml.Marshal(rpc)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	if got, want := StripUUID(string(output)), StripUUID(expected); got != want {
+		t.Errorf("TestGetRawValidXML:\nGot:%s\nWant:\n%s", got, want)
+	}
+}
+
+func TestGetRawInvalidXML(t *testing.T) {
+	invalidXML := "<<get><filter></filter></get>"
+	didPanic := panics(
+		func() {
+			NewRaw(invalidXML)
+		},
+	)
+
+	if !didPanic {
+		t.Error("TestGetRawInvalidXML: Expected panic with invalid XML")
 	}
 }

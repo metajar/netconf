@@ -5,11 +5,12 @@ import (
 	"log"
 
 	"github.com/metajar/netconf/netconf"
+	"github.com/metajar/netconf/netconf/message"
 )
 
 func main() {
 	// Initialize the netconf client to connect to the JUNOS device.
-	client, err := netconf.NewClient("172.31.255.5:22", "admin", "Password", netconf.JUNOS)
+	client, err := netconf.NewClient("172.31.255.5:22", "admin", "Password")
 	if err != nil {
 		log.Fatalf("Failed to create netconf client: %v", err)
 	}
@@ -17,7 +18,7 @@ func main() {
 
 	// Get interface information. Example using raw for sending raw RPC calls for Gets.
 	interfaceFilter := `<get-interface-information><detail/></get-interface-information>`
-	interfaceInfo, err := client.GetRaw(interfaceFilter)
+	interfaceInfo, err := client.Raw(interfaceFilter)
 	if err != nil {
 		log.Fatalf("Failed to get interface information: %v", err)
 	}
@@ -36,7 +37,7 @@ func main() {
 	</configuration>`
 
 	// Retrieve the current configuration
-	currentConfig, err := client.GetConfig(netconf.RUNNING, "subtree", configFilter)
+	currentConfig, err := client.GetConfig(message.DatastoreRunning, "subtree", configFilter)
 	if err != nil {
 		log.Fatalf("Failed to get current configuration: %v", err)
 	}
@@ -67,7 +68,7 @@ func main() {
 	}
 
 	// Retrieve the updated configuration
-	updatedConfig, err := client.GetConfig(netconf.RUNNING, "subtree", configFilter)
+	updatedConfig, err := client.GetConfig(message.DatastoreRunning, "subtree", configFilter)
 	if err != nil {
 		log.Fatalf("Failed to get updated configuration: %v", err)
 	}

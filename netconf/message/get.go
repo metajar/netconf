@@ -25,10 +25,6 @@ type Get struct {
 	} `xml:"get"`
 }
 
-type GetRaw struct {
-	RPC
-}
-
 // NewGet can be used to create a `get` message.
 func NewGet(filterType string, data string) *Get {
 	var rpc Get
@@ -42,14 +38,6 @@ func NewGet(filterType string, data string) *Get {
 		}
 		rpc.Get.Filter = &filter
 	}
-	rpc.MessageID = uuid()
-	return &rpc
-}
-
-func NewGetRaw(data string) *GetRaw {
-	var rpc GetRaw
-	ValidateXML(data, Filter{})
-	rpc.Data = data
 	rpc.MessageID = uuid()
 	return &rpc
 }

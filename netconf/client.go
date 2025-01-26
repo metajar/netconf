@@ -3,20 +3,9 @@ package netconf
 import (
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/lithammer/shortuuid/v4"
 	"github.com/metajar/netconf/logging"
 	"github.com/metajar/netconf/netconf/message"
-)
-
-const (
-	CISCOTYPE = iota
-	ARISTATYPE
-	JUNOS
-)
-
-const (
-	RUNNING   = "running"
-	CANDIDATE = "candidate"
 )
 
 type Client struct {
@@ -27,17 +16,27 @@ type Client struct {
 	timing    time.Time
 }
 
-func NewClient(target string, user, pass string, devicetype int) (Client, error) {
-	var sess *Session
-	var err error
-	id, err := uuid.NewV4()
+type Options struct {
+	keyboardAuth bool
+}
 
-	switch devicetype {
-	case 0, 2:
-		sess, err = dialXR(target, user, pass)
-	case 1:
-		sess, err = dialArista(target, user, pass)
+type Option func(*Options)
+
+func WithKeyboardAuthentication() Option {
+	return func(o *Options) {
+		o.keyboardAuth = true
 	}
+}
+
+func NewClient(target string, user, pass string, opts ...Option) (Client, error) {
+	id := shortuuid.New()
+	o := &Options{}
+
+	for _, opt := range opts {
+		opt(o)
+	}
+	sess, err := NewNetconfConnection(target, user, pass, o.keyboardAuth)
+
 	if err != nil {
 		return Client{}, err
 	}
@@ -48,7 +47,7 @@ func NewClient(target string, user, pass string, devicetype int) (Client, error)
 	}
 	return Client{
 		s:         sess,
-		SessionID: id.String(),
+		SessionID: id,
 		target:    target,
 		timing:    time.Now(),
 	}, nil
@@ -59,9 +58,9 @@ func (c *Client) Get(filter string) (string, error) {
 	return c.executeRPC(message.NewGet(message.FilterTypeSubtree, filter), 30)
 }
 
-func (c *Client) GetRaw(data string) (string, error) {
-	logging.Logger.Infow("GetRaw", "data", data)
-	return c.executeRPC(message.NewGetRaw(data), 30)
+func (c *Client) Raw(data string) (string, error) {
+	logging.Logger.Infow("Raw", "data", data)
+	return c.executeRPC(message.NewRaw(data), 30)
 }
 
 func (c *Client) GetConfig(datastore string, filterType, filter string) (string, error) {

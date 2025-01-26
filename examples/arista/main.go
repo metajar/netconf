@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/metajar/netconf/netconf"
 	"log"
+
+	"github.com/metajar/netconf/netconf"
 )
 
 func main() {
 	// Connect to the Arista device
-	newArista, err := netconf.NewClient("192.168.88.9:830", "grpc", "53cret", netconf.ARISTATYPE)
+	newArista, err := netconf.NewClient("192.168.88.9:830", "grpc", "53cret", netconf.WithKeyboardAuthentication())
 	if err != nil {
 		log.Fatalln(err)
 	}

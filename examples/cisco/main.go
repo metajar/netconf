@@ -9,7 +9,7 @@ import (
 
 func main() {
 	// We setup a new netconf client with a CISCOTYPE to connect to the cisco device.
-	c, err := netconf.NewClient("172.20.20.2:830", "clab", "clab@123", netconf.CISCOTYPE)
+	c, err := netconf.NewClient("172.20.20.2:830", "clab", "clab@123")
 	if err != nil {
 		log.Fatal(err)
 	}
